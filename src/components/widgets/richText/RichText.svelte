@@ -35,7 +35,6 @@
 	import Youtube from '@tiptap/extension-youtube'; // adds support for <a> tags
 
 	export let field: FieldType;
-	export const WidgetData = async () => ({ images, data: _data });
 
 	const fieldName = getFieldName(field);
 	let element;
@@ -46,7 +45,6 @@
 	let active_dropDown = '';
 
 	export let value = $collectionValue[fieldName] || { content: {}, header: {} };
-	console.log($collectionValue);
 
 	const _data = $mode == 'create' ? { content: {}, header: {} } : value;
 	$: _language = field?.translated ? $contentLanguage : publicEnv.DEFAULT_CONTENT_LANGUAGE;

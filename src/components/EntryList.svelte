@@ -650,9 +650,9 @@
 							{#each tableHeaders as header}
 								<td
 									on:click={() => {
-										collectionValue.set(data?.entryList[index]);
 										// logger.debug(data);
 										mode.set('edit');
+										collectionValue.set(data?.entryList[index]);
 										handleSidebarToggle();
 									}}
 									class="text-center font-bold"

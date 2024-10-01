@@ -47,12 +47,13 @@ Key features:
 
 	// Lifecycle
 	onMount(async () => {
+		customData = $collectionValue;
 		await loadTranslationProgress();
 		isLoading = false;
 	});
 
 	afterUpdate(() => {
-		if (root) $collectionValue = fieldsData;
+		if (root) $collectionValue = { ...$collectionValue, ...fieldsData };
 	});
 
 	// Reactive statements
@@ -187,8 +188,8 @@ Key features:
 										<svelte:component
 											this={asAny(widget).default}
 											field={asAny(field)}
-											bind:WidgetData={fieldsData[getFieldName(field)]}
 											value={customData[getFieldName(field)]}
+											bind:WidgetData={fieldsData[getFieldName(field)]}
 											{...$$props}
 										/>
 

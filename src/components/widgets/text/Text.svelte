@@ -18,6 +18,8 @@
 
 	const _data = $mode === 'create' ? {} : value;
 
+	export const WidgetData = _data;
+
 	$: _language = field?.translated ? $contentLanguage : publicEnv.DEFAULT_CONTENT_LANGUAGE;
 	$: updateTranslationProgress(_data, field);
 
@@ -83,9 +85,6 @@
 			validationError = validateSchema(widgetSchema, { value: _data[_language] });
 		}, 300);
 	}
-
-	// Export WidgetData for data binding with Fields.svelte
-	export const WidgetData = async () => _data;
 </script>
 
 <div class="variant-filled-surface btn-group flex w-full rounded">
