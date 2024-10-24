@@ -3,7 +3,7 @@
 @description: This component renders form fields for a collection, handles field editing,
 revision management, live preview, and API data display. 
 
-Key features:
+Features:
 - Dynamic field rendering based on collection schema
 - Tab-based interface for different views (Edit, Revision, Live Preview, API)
 - Real-time translation progress updates
@@ -95,7 +95,7 @@ Key features:
 	}
 
 	$: filteredFields = filterFieldsByPermission(fields || $collection.fields, user.role);
-	$: console.debug($translationProgress)
+	$: console.debug($translationProgress);
 </script>
 
 {#if isLoading}
@@ -167,12 +167,14 @@ Key features:
 											{#if field.translated}
 												<div class="flex items-center gap-1 px-2">
 													<iconify-icon icon="bi:translate" color="dark" width="18" class="text-sm" />
-													<div class="text-xs font-normal text-error-500">
+													<div class="text-sm font-bold text-error-500">
 														{$contentLanguage?.toUpperCase() ?? 'EN'}
 													</div>
 													<!-- Display translation progress -->
-													<div class="text-xs font-normal">
-														({Math.round(($translationProgress[$contentLanguage]?.translated.has(`${$collection?.name}.${getFieldName(field)}`) ? 1 : 0) * 100)}%)
+													<div class="text-sm">
+														({Math.round(
+															($translationProgress[$contentLanguage]?.translated.has(`${$collection?.name}.${getFieldName(field)}`) ? 1 : 0) * 100
+														)}%)
 													</div>
 												</div>
 											{/if}

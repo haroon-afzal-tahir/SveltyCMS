@@ -1,6 +1,15 @@
 <!--
-@file  src/components/EntryList.svelte
-@description  EntryList component to display collections.
+@file:  src/components/EntryList.svelte
+@description:  EntryList component to display collections
+
+Features:
+- Search
+- Pagination
+- Multi-select
+- Sorting
+- Status
+- Icons
+- Filter
 -->
 <script lang="ts">
 	import { browser } from '$app/environment';
@@ -39,7 +48,7 @@
 	// Svelte-dnd-action
 	import { flip } from 'svelte/animate';
 	import { dndzone } from 'svelte-dnd-action';
-	import { logger } from "@src/utils/logger";
+	import { logger } from '@src/utils/logger';
 
 	const flipDurationMs = 300;
 
@@ -101,20 +110,11 @@
 	let currentPage: number = entryListPaginationSettings.currentPage || 1; // Set initial currentPage value
 	let rowsPerPage: number = entryListPaginationSettings.rowsPerPage || 10; // Set initial rowsPerPage value
 	const rowsPerPageOptions = [5, 10, 25, 50, 100, 500]; // Set initial rowsPerPage value options
+	let totalItems = 0; // Initialize totalItems
 
 	// Declare isFirstPage and isLastPage variables
 	let isFirstPage: boolean;
 	let isLastPage: boolean;
-
-	// Define the rowsPerPageHandler function
-	function rowsPerPageHandler(event: Event) {
-		// Get the selected value from the event
-		const selectedValue = (event.target as HTMLSelectElement).value;
-		// Update the rows per page value
-		rowsPerPage = parseInt(selectedValue); // Assuming rowsPerPage is a number
-		// Optionally, you can call the refreshTableData function here if needed
-		refreshTableData();
-	}
 
 	// This function refreshes the data displayed in a table by fetching new data from an API endpoint and updating the tableData and options variables.
 	async function refreshTableData(fetch = true) {
@@ -191,8 +191,8 @@
 					}
 
 					// Add createdAt and updatedAt properties localized to the system language
-					obj.createdAt = entry.createdAt ? new Date(Number(entry.createdAt)*1000).toLocaleString($systemLanguage) : 'N/A';
-					obj.updatedAt = entry.updatedAt ? new Date(Number(entry.updatedAt)*1000).toLocaleString($systemLanguage) : 'N/A';
+					obj.createdAt = entry.createdAt ? new Date(Number(entry.createdAt) * 1000).toLocaleString($systemLanguage) : 'N/A';
+					obj.updatedAt = entry.updatedAt ? new Date(Number(entry.updatedAt) * 1000).toLocaleString($systemLanguage) : 'N/A';
 					obj._id = entry._id; // Add _id property
 
 					return obj;
@@ -337,18 +337,18 @@
 			try {
 				// Call the appropriate API endpoint based on the status
 				switch (status) {
-					case 'delete':
-						// If the status is 'Delete', call the delete endpoint
+					case 'deleted':
+						// If the status is 'deleted', call the delete endpoint
 						await deleteData({ data: formData, collectionName: $collection.name as any });
 						break;
-					case 'publish':
-					case 'unpublish':
-					case 'test':
-						// If the status is 'Publish', 'Unpublish', 'Schedule', or 'Clone', call the patch endpoint
+					case 'published':
+					case 'unpublished':
+					case 'testing':
+						// If the status is 'testing', call the publish endpoint
 						await setStatus({ data: formData, collectionName: $collection.name as any });
 						break;
-					case 'clone':
-					case 'schedule':
+					case 'cloned':
+					case 'scheduled':
 						// Trigger a toast message indicating that the feature is not yet implemented
 						const toast = {
 							message: 'Feature not yet implemented.',
@@ -370,7 +370,7 @@
 		};
 
 		// If more than one row is selected or the status is 'delete', show confirmation modal
-		if (modifyList.length > 1 || status === 'delete') {
+		if (modifyList.length > 1 || status === 'deleted') {
 			const modalData: ModalSettings = {
 				type: 'confirm',
 				title: m.entrylist_title(),
@@ -429,24 +429,32 @@
 			</div>
 		</div>
 
-		<!-- Expand/Collapse -->
-		<button type="button" on:keydown on:click={() => (expand = !expand)} class="variant-ghost-surface btn-icon mt-1 sm:hidden">
-			<iconify-icon icon="material-symbols:filter-list-rounded" width="30" />
-		</button>
+		<div class="flex items-center justify-between gap-1">
+			<!-- Expand/Collapse -->
+			<button
+				type="button"
+				on:keydown
+				on:click={() => (expand = !expand)}
+				class="variant-ghost-surface btn-icon sm:hidden"
+				aria-label="Expand/Collapse"
+			>
+				<iconify-icon icon="material-symbols:filter-list-rounded" width="30"> </iconify-icon>
+			</button>
 
-		<!-- Content Language -->
-		<div class="mt-1 sm:hidden">
-			<TranslationStatus />
-		</div>
+			<!-- Content Language -->
+			<div class="mt-1 sm:hidden">
+				<TranslationStatus />
+			</div>
 
-		<!-- Table Filter -->
-		<div class="relative mt-1 hidden items-center justify-center gap-2 sm:flex">
-			<TableFilter bind:globalSearchValue bind:filterShow bind:columnShow bind:density />
-			<TranslationStatus />
-		</div>
-		<!-- MultiButton -->
-		<div class="mt-2 w-full sm:mt-0 sm:w-auto">
-			<EntryListMultiButton {isCollectionEmpty} />
+			<!-- Table Filter -->
+			<div class="relative mt-1 hidden items-center justify-center gap-2 sm:flex">
+				<TableFilter bind:globalSearchValue bind:filterShow bind:columnShow bind:density />
+				<TranslationStatus />
+			</div>
+			<!-- MultiButton -->
+			<div class="mt-2 w-full sm:mt-0 sm:w-auto">
+				<EntryListMultiButton {isCollectionEmpty} />
+			</div>
 		</div>
 	</div>
 
@@ -658,9 +666,8 @@
 							{#each tableHeaders as header}
 								<td
 									on:click={() => {
-
 										collectionValue.set(data?.entryList[index]);
-										logger.debug("Edit datas: ",`${JSON.stringify(data?.entryList[index])}`);
+										logger.debug('Edit datas: ', `${JSON.stringify(data?.entryList[index])}`);
 										mode.set('edit');
 										handleSidebarToggle();
 									}}
@@ -680,20 +687,22 @@
 			</table>
 		</div>
 
-		<!-- Pagination  -->
+		<!-- Pagination -->
 		<div class="sticky bottom-0 left-0 right-0 mt-2 flex flex-col items-center justify-center px-2 md:flex-row md:justify-between md:p-4">
 			<TablePagination
 				{currentPage}
 				{pagesCount}
 				{rowsPerPage}
 				{rowsPerPageOptions}
+				{totalItems}
 				on:updatePage={(e) => {
 					currentPage = e.detail;
-					refreshTableData();
+					refreshTableData(true);
 				}}
 				on:updateRowsPerPage={(e) => {
 					rowsPerPage = e.detail;
-					refreshTableData();
+					currentPage = 1;
+					refreshTableData(true);
 				}}
 			/>
 		</div>

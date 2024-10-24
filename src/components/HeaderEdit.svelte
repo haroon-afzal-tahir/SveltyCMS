@@ -1,7 +1,20 @@
 <!-- 
  @file  src/components/HeaderEdit.svelte
- @description  HeaderEdit component.
- -->
+ @description  HeaderEdit component manages the collection entry header for both "edit" and "view" modes. It provides functionality for toggling sidebar visibility, saving form data, handling modal dialogs for scheduling, and managing language or tab-specific temporary data. The header also adapts to mobile/desktop views and offers options for actions like publishing, deleting, or scheduling entries, while maintaining accessibility and responsive design.
+
+ Features:
+ - Sidebar toggle (for mobile/desktop)
+ - Collection entry management with mode switching (view/edit)
+ - Save form data with validation
+ - Modal dialogs for scheduling entries
+ - Language and tab-specific temporary data management
+ - Responsive UI with adaptive actions for mobile and desktop
+ - Role-based permissions handling for actions (publish, delete, etc.)
+ - Accessible icons and buttons using ARIA attributes
+ - Debounced "Show More" actions for performance optimization
+ - Cancel and reload functionality for editing mode
+ - Full dark mode support with theme-based styling
+-->
 
 <script lang="ts">
 	import { getFieldName, saveFormData } from '@utils/utils';
@@ -72,8 +85,8 @@
 		if ($mode === 'view') {
 			tempData = {};
 		}
-		if ($mode === 'edit' && $collectionValue.status === 'PUBLISHED') {
-			$modifyEntry('unpublish');
+		if ($mode === 'edit' && $collectionValue.status === 'published') {
+			$modifyEntry('unpublished');
 		}
 	}
 
@@ -218,7 +231,7 @@
 
 		<!-- TODO: fix button icon switch -->
 		<!-- Cancel/Reload -->
-		{#if $headerActionButton}
+		{#if !$headerActionButton}
 			<button type="button" on:click={handleCancel} class="variant-ghost-surface btn-icon">
 				<iconify-icon icon="material-symbols:close" width="24" />
 			</button>
@@ -235,18 +248,18 @@
 		<div class="flex flex-col items-center justify-center">
 			<!-- Delete Content -->
 			<!-- disabled={!$collection?.permissions?.[userRole]?.delete} -->
-			<button type="button" on:click={() => $modifyEntry('delete')} class="gradient-error gradient-error-hover gradient-error-focus btn-icon">
+			<button type="button" on:click={() => $modifyEntry('deleted')} class="gradient-error gradient-error-hover gradient-error-focus btn-icon">
 				<iconify-icon icon="icomoon-free:bin" width="24" />
 			</button>
 		</div>
 
 		<!-- Clone Content -->
 		{#if $mode == 'edit'}
-			{#if $collectionValue.status == 'UNPUBLISHED'}
+			{#if $collectionValue.status == 'unpublished'}
 				<div class="flex flex-col items-center justify-center">
 					<button
 						type="button"
-						on:click={() => $modifyEntry('publish')}
+						on:click={() => $modifyEntry('published')}
 						disabled={!($collection?.permissions?.[user.role]?.write && $collection?.permissions?.[user.role]?.create)}
 						class="gradient-tertiary gradient-tertiary-hover gradient-tertiary-focus btn-icon"
 					>
@@ -268,7 +281,7 @@
 				<div class="flex flex-col items-center justify-center">
 					<button
 						type="button"
-						on:click={() => $modifyEntry('unpublish')}
+						on:click={() => $modifyEntry('unpublished')}
 						disabled={!$collection?.permissions?.[user.role]?.write}
 						class="gradient-yellow gradient-yellow-hover gradient-yellow-focus btn-icon"
 					>
@@ -280,7 +293,7 @@
 			<div class="flex flex-col items-center justify-center">
 				<button
 					type="button"
-					on:click={() => $modifyEntry('schedule')}
+					on:click={() => $modifyEntry('scheduled')}
 					disabled={!$collection?.permissions?.[user.role]?.write}
 					class="gradient-pink gradient-pink-hover gradient-pink-focus btn-icon"
 				>
@@ -291,7 +304,7 @@
 			<div class="flex flex-col items-center justify-center">
 				<button
 					type="button"
-					on:click={() => $modifyEntry('clone')}
+					on:click={() => $modifyEntry('cloned')}
 					disabled={!($collection?.permissions?.[user.role]?.write && $collection?.permissions?.[user.role]?.create)}
 					class="gradient-secondary gradient-secondary-hover gradient-secondary-focus btn-icon"
 				>

@@ -2,6 +2,12 @@
 @file src/routes/(app)/mediagallery/+page.svelte 
 @description This component sets up and displays the media gallery page. 
 It provides a user-friendly interface for searching, filtering, and navigating through media files.
+
+Features:
+- Search for media files
+- Filter media files by type
+- Navigate through media files
+
 -->
 
 <script lang="ts">
@@ -20,28 +26,30 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 	// Components
 	import PageTitle from '@components/PageTitle.svelte';
 	import Breadcrumb from '@components/Breadcrumb.svelte';
-	import Filter from './Filter.svelte';
 	import MediaGrid from './MediaGrid.svelte';
 	import MediaTable from './MediaTable.svelte';
+
 	// Skeleton
 	import { getToastStore, getModalStore } from '@skeletonlabs/skeleton';
 	import type { ModalSettings } from '@skeletonlabs/skeleton';
-	import { logger } from "@src/utils/logger";
+
 	const toastStore = getToastStore();
 	const modalStore = getModalStore();
+
+	// System Looger
+	import { logger } from '@src/utils/logger';
 
 	// Prop to receive data from the server
 	export let data: { user: any; media: any[]; virtualFolders: any[] } | undefined = {
 		user: undefined,
-		media :[],
+		media: [],
 		virtualFolders: []
 	};
 
 	let files: MediaImage[] = [];
-
-	let breadcrumb: string[] = [];
 	let folders: { _id: string; name: string; path: string[]; parent?: string | null }[] = [];
 	let currentFolder: { _id: string; name: string; path: string[] } | null = null;
+	let breadcrumb: string[] = [];
 
 	let globalSearchValue = '';
 	let selectedMediaType = 'All';
@@ -140,6 +148,7 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 			if (data.success) {
 				// Correctly assign mediaFiles to files
 				files = Array.isArray(data.folders) ? data.folders : [];
+				// files = data.contents.mediaFiles;
 				console.log('Fetched media files:', files);
 			} else {
 				throw new Error(data.error || 'Unknown error');
@@ -307,7 +316,7 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 	// Handle delete image
 	async function handleDeleteImage(event: CustomEvent<MediaType>) {
 		try {
-			const q = toFormData({ method: 'POST', image: event.detail?._id  ?? "" });
+			const q = toFormData({ method: 'POST', image: event.detail?._id ?? '' });
 			const response = await axios.post('?/api/mediaHandler/', q, {
 				...config,
 				withCredentials: true // This ensures cookies are sent with the request
@@ -395,16 +404,16 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 	<PageTitle name="Media Gallery" icon="bi:images" showBackButton={true} />
 
 	<!-- Row 2 (on mobile): Save and Reset Buttons -->
-	<div class="lgd:mt-0 mt-2 flex items-center justify-center gap-4 lg:justify-end">
+	<div class="lgd:mt-0 flex items-center justify-center gap-4 lg:justify-end">
 		<!-- Add folder -->
-		<button class="variant-filled-tertiary btn gap-2" on:click={openAddFolderModal}>
-			<iconify-icon icon="mdi:folder-add-outline" width="24" />
+		<button on:click={openAddFolderModal} class="variant-filled-tertiary btn gap-2" aria-label="Add folder">
+			<iconify-icon icon="mdi:folder-add-outline" width="24"> </iconify-icon>
 			Add folder
 		</button>
 
 		<!-- Add Media -->
-		<button class="variant-filled-primary btn gap-2" on:click={() => goto('/mediagallery/uploadMedia')}>
-			<iconify-icon icon="carbon:add-filled" width="24" />
+		<button on:click={() => goto('/mediagallery/uploadMedia')} class="variant-filled-primary btn gap-2" aria-label="Add Media">
+			<iconify-icon icon="carbon:add-filled" width="24"> </iconify-icon>
 			Add Media
 		</button>
 	</div>
@@ -413,16 +422,14 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 <!-- Breadcrumb Navigation -->
 <Breadcrumb {breadcrumb} {folders} {openFolder} />
 
-<!-- <Filter {globalSearchValue} {selectedMediaType} {mediaTypes} /> -->
-
 <div class="wrapper overflow-auto">
 	<div class="mb-8 flex w-full flex-col justify-center gap-1 md:hidden">
 		<label for="globalSearch">Search</label>
 		<div class="input-group input-group-divider grid max-w-md grid-cols-[auto_1fr_auto]">
 			<input id="globalSearch" type="text" placeholder="Search" class="input" bind:value={globalSearchValue} />
 			{#if globalSearchValue}
-				<button on:click={() => (globalSearchValue = '')} class="variant-filled-surface w-12">
-					<iconify-icon icon="ic:outline-search-off" width="24" />
+				<button on:click={() => (globalSearchValue = '')} class="variant-filled-surface w-12" aria-label="Clear search">
+					<iconify-icon icon="ic:outline-search-off" width="24"> </iconify-icon>
 				</button>
 			{/if}
 		</div>
@@ -434,7 +441,7 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 					{#each mediaTypes as type}
 						<option value={type.value}>
 							<p class="flex items-center gap-2">
-								<iconify-icon icon={type.icon} width="24" class="text-primary-500" />
+								<iconify-icon icon={type.icon} width="24" class="text-primary-500"> </iconify-icon>
 								<span class="uppercase">{type.value}</span>
 							</p>
 						</option>
@@ -445,7 +452,7 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 			<div class="flex flex-col text-center">
 				<label for="sortButton">Sort</label>
 				<button id="sortButton" class="variant-ghost-surface btn" aria-label="Sort">
-					<iconify-icon icon="flowbite:sort-outline" width="24" />
+					<iconify-icon icon="flowbite:sort-outline" width="24"> </iconify-icon>
 				</button>
 			</div>
 
@@ -454,26 +461,28 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 					<div class="flex sm:divide-x sm:divide-gray-500">
 						{#if view === 'grid'}
 							<button
-								class="btn flex flex-col items-center justify-center px-1"
 								on:click={() => {
 									view = 'table';
 									storeUserPreference(view, gridSize, tableSize);
 								}}
+								class="btn flex flex-col items-center justify-center px-1"
+								aria-label="table"
 							>
 								<p class="text-center text-xs">Display</p>
-								<iconify-icon icon="material-symbols:grid-view-rounded" height="42" style={`color: text-black dark:text-white`} />
+								<iconify-icon icon="material-symbols:grid-view-rounded" height="42" style={`color: text-black dark:text-white`}> </iconify-icon>
 								<p class="text-xs">Table</p>
 							</button>
 						{:else}
 							<button
-								class="btn flex flex-col items-center justify-center px-1"
 								on:click={() => {
 									view = 'grid';
 									storeUserPreference(view, gridSize, tableSize);
 								}}
+								class="btn flex flex-col items-center justify-center px-1"
+								aria-label="Grid"
 							>
 								<p class="text-center text-xs">Display</p>
-								<iconify-icon icon="material-symbols:list-alt-outline" height="44" style={`color: text-black dark:text-white`} />
+								<iconify-icon icon="material-symbols:list-alt-outline" height="44" style={`color: text-black dark:text-white`}> </iconify-icon>
 								<p class="text-center text-xs">Grid</p>
 							</button>
 						{/if}
@@ -483,18 +492,19 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 					<p class="text-xs">Size</p>
 					<div class="divide-surface-00 flex divide-x">
 						{#if (view === 'grid' && gridSize === 'small') || (view === 'table' && tableSize === 'small')}
-							<button type="button" class="px-1" on:click={handleClick}>
-								<iconify-icon icon="material-symbols:background-grid-small-sharp" height="40" style={`color:text-black dark:text-white`} />
+							<button on:click={handleClick} type="button" class="px-1" aria-label="Small">
+								<iconify-icon icon="material-symbols:background-grid-small-sharp" height="40" style={`color:text-black dark:text-white`}>
+								</iconify-icon>
 								<p class="text-xs">Small</p>
 							</button>
 						{:else if (view === 'grid' && gridSize === 'medium') || (view === 'table' && tableSize === 'medium')}
-							<button type="button" class="px-1" on:click={handleClick}>
-								<iconify-icon icon="material-symbols:grid-on-sharp" height="40" style={`color: text-black dark:text-white`} />
+							<button on:click={handleClick} type="button" class="px-1" aria-label="Medium">
+								<iconify-icon icon="material-symbols:grid-on-sharp" height="40" style={`color: text-black dark:text-white`}> </iconify-icon>
 								<p class="text-xs">Medium</p>
 							</button>
 						{:else}
-							<button type="button" class="px-1" on:click={handleClick}>
-								<iconify-icon icon="material-symbols:grid-view" height="40" style={`color: text-black dark:text-white`} />
+							<button on:click={handleClick} type="button" class="px-1" aria-label="Large">
+								<iconify-icon icon="material-symbols:grid-view" height="40" style={`color: text-black dark:text-white`}> </iconify-icon>
 								<p class="text-xs">Large</p>
 							</button>
 						{/if}
@@ -508,10 +518,10 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 		<div class="mb-8 flex w-full flex-col justify-center gap-1">
 			<label for="globalSearchMd">Search</label>
 			<div class="input-group input-group-divider grid max-w-md grid-cols-[auto_1fr_auto]">
-				<input id="globalSearchMd" type="text" placeholder="Search" class="input" bind:value={globalSearchValue} />
+				<input bind:value={globalSearchValue} id="globalSearchMd" type="text" placeholder="Search" class="input" />
 				{#if globalSearchValue}
-					<button on:click={() => (globalSearchValue = '')} class="variant-filled-surface w-12">
-						<iconify-icon icon="ic:outline-search-off" width="24" />
+					<button on:click={() => (globalSearchValue = '')} class="variant-filled-surface w-12" aria-label="Clear search">
+						<iconify-icon icon="ic:outline-search-off" width="24"> </iconify-icon>
 					</button>
 				{/if}
 			</div>
@@ -524,7 +534,7 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 					{#each mediaTypes as type}
 						<option value={type.value}>
 							<p class="flex items-center justify-between gap-2">
-								<iconify-icon icon={type.icon} width="24" class="mr-2 text-primary-500" />
+								<iconify-icon icon={type.icon} width="24" class="mr-2 text-primary-500"> </iconify-icon>
 								<span class="uppercase">{type.value}</span>
 							</p>
 						</option>
@@ -536,7 +546,7 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 		<div class="mb-8 flex flex-col justify-center gap-1 text-center">
 			<label for="sortButton">Sort</label>
 			<button id="sortButton" class="variant-ghost-surface btn" aria-label="Sort">
-				<iconify-icon icon="flowbite:sort-outline" width="24" />
+				<iconify-icon icon="flowbite:sort-outline" width="24"> </iconify-icon>
 			</button>
 		</div>
 
@@ -545,23 +555,26 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 				Display
 				<div class="flex divide-x divide-gray-500">
 					<button
-						class="px-2"
 						on:click={() => {
 							view = 'grid';
 							storeUserPreference(view, gridSize, tableSize);
 						}}
+						class="px-2"
+						aria-label="Grid"
 					>
 						<iconify-icon icon="material-symbols:grid-view-rounded" height="40" style={`color: ${view === 'grid' ? 'black dark:white' : 'grey'}`} />
 						<br /> <span class="text-tertiary-500 dark:text-primary-500">Grid</span>
 					</button>
 					<button
-						class="px-2"
 						on:click={() => {
 							view = 'table';
 							storeUserPreference(view, gridSize, tableSize);
 						}}
+						class="px-2"
+						aria-label="Table"
 					>
-						<iconify-icon icon="material-symbols:list-alt-outline" height="40" style={`color: ${view === 'table' ? 'black dark:white' : 'grey'}`} />
+						<iconify-icon icon="material-symbols:list-alt-outline" height="40" style={`color: ${view === 'table' ? 'black dark:white' : 'grey'}`}>
+						</iconify-icon>
 						<br /><span class="text-tertiary-500 dark:text-primary-500">Table</span>
 					</button>
 				</div>
@@ -571,18 +584,18 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 				Size
 				<div class="flex divide-x divide-gray-500">
 					{#if (view === 'grid' && gridSize === 'small') || (view === 'table' && tableSize === 'small')}
-						<button type="button" class="px-1 md:px-2" on:click={handleClick}>
-							<iconify-icon icon="material-symbols:background-grid-small-sharp" height="40" />
+						<button on:click={handleClick} type="button" class="px-1 md:px-2" aria-label="Small">
+							<iconify-icon icon="material-symbols:background-grid-small-sharp" height="40"> </iconify-icon>
 							<br /><span class="text-tertiary-500 dark:text-primary-500">Small</span>
 						</button>
 					{:else if (view === 'grid' && gridSize === 'medium') || (view === 'table' && tableSize === 'medium')}
-						<button type="button" class="px-1 md:px-2" on:click={handleClick}>
-							<iconify-icon icon="material-symbols:grid-on-sharp" height="40" />
+						<button on:click={handleClick} type="button" class="px-1 md:px-2" aria-label="Medium">
+							<iconify-icon icon="material-symbols:grid-on-sharp" height="40"> </iconify-icon>
 							<br /><span class="text-tertiary-500 dark:text-primary-500">Medium</span>
 						</button>
 					{:else}
-						<button type="button" class="px-1 md:px-2" on:click={handleClick}>
-							<iconify-icon icon="material-symbols:grid-view" height="40" />
+						<button on:click={handleClick} type="button" class="px-1 md:px-2" aria-label="Large">
+							<iconify-icon icon="material-symbols:grid-view" height="40"> </iconify-icon>
 							<br /><span class="text-tertiary-500 dark:text-primary-500">Large</span>
 						</button>
 					{/if}

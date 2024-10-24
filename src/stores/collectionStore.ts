@@ -33,18 +33,18 @@ export const targetWidget: Writable<any> = writable({});
 
 // Status map for various collection states
 export const statusMap = {
-	delete: 'deleted',
-	publish: 'published',
-	unpublish: 'unpublished',
-	schedule: 'scheduled',
-	clone: 'cloned',
-	test: 'testing'
+	deleted: 'deleted',
+	published: 'published',
+	unpublished: 'unpublished',
+	scheduled: 'scheduled',
+	cloned: 'cloned',
+	testing: 'testing'
 };
 
 interface Collection extends Omit<Schema, 'name'> {
-		id: number;
-		name: CollectionNames;
-	}
+	id: number;
+	name: CollectionNames;
+}
 
 //  Initialize categories store with an array structure
 export const categories: Writable<

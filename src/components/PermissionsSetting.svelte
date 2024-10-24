@@ -1,158 +1,163 @@
 <!-- 
 @file src/components/PermissionsSetting.svelte
-@description - The Permissions Setting
+@description Permissions Setting Component for managing role-based permissions
+Features:
+- Enables toggling permissions for non-admin roles
+- Provides search functionality for roles
+- Allows adding new roles
 -->
-
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
-	import { icon, type Role } from '@src/auth/types';
+	import { createEventDispatcher } from 'svelte';
+	// Auth
+	import type { Role } from '@src/auth/types';
+	import { icon } from '@src/auth/types';
 	import { PermissionAction } from '@root/config/permissions';
-	import { authAdapter, initializationPromise } from '@src/databases/db';
 
-	// Components
-	import Loading from '@components/Loading.svelte';
+	import { createRandomID } from '@utils/utils';
+
 	// Skeleton
 	import { getToastStore } from '@skeletonlabs/skeleton';
 
 	const dispatch = createEventDispatcher();
 	const toastStore = getToastStore();
 
+	// Props
+	export let roles: Role[] = [];
+	export let permissions: any;
+
 	// Define the type for a role with permissions
 	interface RoleWithPermissions {
 		name: string;
-		isAdmin?: boolean; // Handle admin roles
+		isAdmin: boolean; // Handle admin roles
 		permissions: Partial<Record<PermissionAction, boolean>>;
 	}
 
-	export const permissions: Record<string, Partial<Record<PermissionAction, boolean>>> = {};
-
 	let rolesArray: RoleWithPermissions[] = [];
 	let allRoles: string[] = [];
-	let isLoading = true;
 	let searchQuery = '';
+	let error: string | null = null;
 
-	onMount(async () => {
-		try {
-			// Wait for the initialization promise to resolve
-			await initializationPromise;
-			if (!authAdapter) {
-				throw Error('Auth adapter is not initialized');
-			}
+	// Function to add a new role
+	function addRole() {
+		const availableRoles = allRoles.filter((role) => !rolesArray.some((r) => r.name === role));
 
-			const fetchedRoles = await authAdapter.getAllRoles();
-			// Continue with role fetching logic
-		} catch (error) {
-			console.error('Failed to fetch roles:', error);
-			toastStore.trigger({
-				message: 'Failed to fetch roles',
-				background: 'variant-filled-error'
-			});
-		} finally {
-			isLoading = false;
+		if (availableRoles.length > 0) {
+			const newRole: RoleWithPermissions = {
+				name: availableRoles[0],
+				isAdmin: false,
+				permissions: Object.fromEntries(Object.values(PermissionAction).map((action) => [action, false]))
+			};
+
+			rolesArray = [...rolesArray, newRole];
+			updateParent();
+			showToast('Role added successfully', 'success');
+		} else {
+			showToast('All roles have been added', 'warning');
 		}
-	});
+	}
 
-	function updateRolesArray(fetchedRoles: Role[]) {
-		rolesArray = fetchedRoles.map((role) => ({
+	// Function to update parent
+	function updateParent() {
+		const rolePermissions = {};
+		rolesArray.forEach((role) => {
+			rolePermissions[role.name] = role.permissions;
+		});
+		dispatch('update', rolePermissions);
+	}
+
+	// Show toast messages
+	function showToast(message: string, type: 'success' | 'warning' | 'error') {
+		const backgrounds = {
+			success: 'variant-filled-success',
+			warning: 'variant-filled-warning',
+			error: 'variant-filled-error'
+		};
+		toastStore.trigger({
+			message,
+			background: backgrounds[type],
+			timeout: 3000
+		});
+	}
+
+	// Initialize roles when they're provided
+	$: if (roles.length > 0) {
+		allRoles = roles.map((role) => role.name);
+		rolesArray = roles.map((role) => ({
 			name: role.name,
-			isAdmin: role.isAdmin,
-			permissions: convertPermissionsArray(role.permissions) // Convert permissions array to the expected format
+			isAdmin: role.isAdmin ?? false,
+			permissions: convertPermissionsArray(role.permissions)
 		}));
 	}
 
-	// Function to convert string[] permissions to Partial<Record<PermissionAction, boolean>>
-	function convertPermissionsArray(permissionIds: string[]): Partial<Record<PermissionAction, boolean>> {
-		const permissionsObj: Partial<Record<PermissionAction, boolean>> = {};
-
-		Object.values(PermissionAction).forEach((action) => {
-			permissionsObj[action] = permissionIds.includes(action);
-		});
-
-		return permissionsObj;
+	// Function to convert permissions array
+	function convertPermissionsArray(permissionIds: string[] = []): Partial<Record<PermissionAction, boolean>> {
+		return Object.values(PermissionAction).reduce(
+			(acc, action) => {
+				acc[action] = permissionIds.includes(action);
+				return acc;
+			},
+			{} as Partial<Record<PermissionAction, boolean>>
+		);
 	}
 
-	// Toggle specific permission for a role
-	function togglePermission(roleName: string, permission: PermissionAction) {
+	// Function to toggle permission
+	function togglePermission(roleName: string, permission: PermissionAction): void {
 		const role = rolesArray.find((r) => r.name === roleName);
 		if (role && !role.isAdmin) {
-			// Prevent toggling permissions for admin roles
 			role.permissions[permission] = !role.permissions[permission];
-			dispatch('update', { [roleName]: role.permissions });
-		} else if (role && role.isAdmin) {
-			toastStore.trigger({
-				message: 'Cannot modify permissions for admin role',
-				background: 'variant-filled-warning'
-			});
+			updateParent();
+		} else if (role?.isAdmin) {
+			showToast('Cannot modify permissions for admin role', 'warning');
 		}
 	}
 
-	// Add a new role dynamically with default permissions
-	async function addRole() {
-		if (!authAdapter) {
-			toastStore.trigger({
-				message: 'Auth system is not initialized',
-				background: 'variant-filled-error'
-			});
-			return;
-		}
-
-		const existingRoles = rolesArray.map((r) => r.name);
-		const availableRoles = allRoles.filter((role) => !existingRoles.includes(role));
-
-		if (availableRoles.length > 0) {
-			const newRole = {
-				name: availableRoles[0],
-				permissions: Object.fromEntries(Object.values(PermissionAction).map((action) => [action, false]))
-			};
-			rolesArray = [...rolesArray, newRole];
-			dispatch('update', { [newRole.name]: newRole.permissions });
-		} else {
-			toastStore.trigger({
-				message: 'All roles have been added',
-				background: 'variant-filled-warning'
-			});
-		}
-	}
-
-	// Filter roles based on search query
+	// Filter roles based on search
 	$: filteredRolesArray = rolesArray.filter((role) => role.name.toLowerCase().includes(searchQuery.toLowerCase()));
 </script>
 
-{#if isLoading}
-	<Loading customTopText="Fetching Roles" customBottomText="Loading Permissions" />
+{#if error}
+	<div class="p-4 text-center text-error-500" role="alert">
+		<p>Error: {error}</p>
+		<button on:click={() => (error = null)} class="variant-filled-primary btn mt-2"> Dismiss </button>
+	</div>
 {:else}
-	<div>
-		<h2>Manage Permissions</h2>
-		<input bind:value={searchQuery} placeholder="Search roles..." class="input" />
-		<button on:click={addRole} class="variant-filled-primary btn">Add Role</button>
+	<div class="flex flex-col gap-4">
+		<h2 class="text-2xl font-bold">Manage Permissions</h2>
+		<div class="flex flex-col justify-between gap-4 sm:flex-row">
+			<input bind:value={searchQuery} placeholder="Search roles..." class="input flex-grow" aria-label="Search roles" />
+			<button on:click={addRole} class="variant-filled-primary btn" disabled={allRoles.length === rolesArray.length}> Add Role </button>
+		</div>
 
-		<table class="table">
-			<thead>
-				<tr>
-					<th>Role</th>
-					{#each Object.values(PermissionAction) as permission}
-						<th>{permission}</th>
-					{/each}
-				</tr>
-			</thead>
-			<tbody>
-				{#each filteredRolesArray as role}
+		<div class="overflow-x-auto">
+			<table class="table w-full">
+				<thead>
 					<tr>
-						<td>{role.name}</td>
+						<th scope="col" class="px-4 py-2">Role</th>
 						{#each Object.values(PermissionAction) as permission}
-							<td>
-								<button
-									on:click={() => togglePermission(role.name, permission)}
-									class={`btn ${role.permissions[permission] ? 'variant-filled-success' : 'variant-filled-error'}`}
-									disabled={role.isAdmin}
-								>
-									<iconify-icon icon={icon[permission]} />
-								</button>
-							</td>
+							<th scope="col" class="px-4 py-2">{permission}</th>
 						{/each}
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each filteredRolesArray as role (role.name)}
+						<tr>
+							<th scope="row" class="px-4 py-2">{role.name}</th>
+							{#each Object.values(PermissionAction) as permission}
+								<td class="px-4 py-2">
+									<button
+										on:click={() => togglePermission(role.name, permission)}
+										class={`btn ${role.permissions[permission] ? 'variant-filled-success' : 'variant-filled-error'}`}
+										disabled={role.isAdmin}
+										aria-label={`${role.permissions[permission] ? 'Disable' : 'Enable'} ${permission} for ${role.name}`}
+									>
+										<iconify-icon icon={icon[permission]} />
+									</button>
+								</td>
+							{/each}
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	</div>
 {/if}

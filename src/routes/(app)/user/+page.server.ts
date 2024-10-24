@@ -38,18 +38,9 @@ export const load: PageServerLoad = async (event) => {
 		const roles: Role[] = event.locals.roles || [];
 		const isFirstUser: boolean = event.locals.isFirstUser;
 		const hasManageUsersPermission: boolean = event.locals.hasManageUsersPermission;
-
-		logger.debug(`User from event.locals: ${JSON.stringify(user)}`);
-		logger.debug(`Roles from event.locals: ${JSON.stringify(roles)}`);
-		logger.debug(`Is first user: ${isFirstUser}`);
-		logger.debug(`Has manage users permission: ${hasManageUsersPermission}`);
-		logger.debug(`event ${JSON.stringify(event, null, 2)}`);
-
 		const addUserForm = await superValidate(event, zod(addUserTokenSchema));
 		const changePasswordForm = await superValidate(event, zod(changePasswordSchema));
 
-		logger.debug(`addUserForm: ${JSON.stringify(addUserForm)}`);
-		logger.debug(`changePasswordForm: ${JSON.stringify(changePasswordForm)}`);
 		// Prepare user object for return, ensuring _id is a string
 		const safeUser = user
 			? {
@@ -73,18 +64,18 @@ export const load: PageServerLoad = async (event) => {
 				username: user.username || null,
 				role: user.role,
 				activeSessions: user.lastActiveAt ? 1 : 0, // Placeholder for active sessions
-				lastAccess: user.lastActiveAt ? new Date(user.lastActiveAt).toISOString() : null,
-				createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : null,
-				updatedAt: user.updatedAt ? new Date(user.updatedAt).toISOString() : null
+				lastAccess: user.lastActiveAt ? new Date(user.lastActiveAt) : null,
+				createdAt: user.createdAt ? new Date(user.createdAt) : null,
+				updatedAt: user.updatedAt ? new Date(user.updatedAt) : null
 			}));
 
 			const formattedTokens = allTokens.map((token) => ({
 				user_id: token.user_id,
 				blocked: false, // Assuming tokens don't have a 'blocked' status
 				email: token.email || '',
-				expiresIn: token.expires ? new Date(token.expires).toISOString() : null,
-				createdAt: new Date(token.token_id).toISOString(), // Assuming token_id is a timestamp
-				updatedAt: new Date(token.token_id).toISOString() // Assuming tokens are not updated
+				expiresIn: token.expires ? new Date(token.expires) : null,
+				createdAt: new Date(token.token_id), // Assuming token_id is a timestamp
+				updatedAt: new Date(token.token_id) // Assuming tokens are not updated
 			}));
 
 			adminData = {

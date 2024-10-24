@@ -62,23 +62,29 @@ export const getGuiFields = (fieldParams: { [key: string]: any }, GuiSchema: { [
 };
 
 // Function to convert an object to form data
-export const obj2formData = (obj: any) => {
+export const obj2formData = (obj: Record<string, any>) => {
 	const formData = new FormData();
+
 	for (const key in obj) {
-		const data = JSON.stringify(obj[key], (key, val) => {
+		const value = obj[key];
+
+		const data = JSON.stringify(value, (k, val) => {
+			// Early return for specific conditions
 			if (!val && val !== false) return undefined;
-			else if (key == 'schema') return undefined;
-			else if (key == 'display' && val.default == true) return undefined;
-			else if (key == 'display') return ('🗑️' + val + '🗑️').replaceAll('display', 'function display');
-			else if (key == 'widget') return { key: val.key, GuiFields: val.GuiFields };
-			else if (typeof val === 'function') {
-				return '🗑️' + val + '🗑️';
-			}
+			if (k === 'schema') return undefined;
+			if (k === 'display' && val?.default) return undefined;
+			if (k === 'display') return `🗑️${val}🗑️`.replace(/display/g, 'function display');
+			if (k === 'widget') return { key: val.key, GuiFields: val.GuiFields };
+			if (typeof val === 'function') return `🗑️${val}🗑️`;
+
 			return val;
 		});
-		if (!data) continue;
-		formData.append(key, data);
+
+		if (data) {
+			formData.append(key, data);
+		}
 	}
+
 	return formData;
 };
 
@@ -284,7 +290,7 @@ export async function saveFormData({
 		formData.append('_meta_data', JSON.stringify(meta_data.get()));
 	}
 
-	formData.append('status', $collectionValue.status || 'UNPUBLISHED');
+	formData.append('status', $collectionValue.status || 'unpublished');
 
 	const username = user ? user.username : 'Unknown';
 
@@ -294,7 +300,7 @@ export async function saveFormData({
 				logger.debug('Saving data in create mode.');
 				formData.append('createdAt', Math.floor(Date.now() / 1000).toString());
 				formData.append('updatedAt', formData.get('createdAt') as string);
-				
+
 				return await addData({ data: formData, collectionName: $collection.name as any });
 
 			case 'edit':
@@ -590,7 +596,7 @@ export function updateTranslationProgress(data, field) {
 			$translationProgress[lang] = { total: new Set(), translated: new Set() };
 		}
 
-		if (field?.translated)  {
+		if (field?.translated) {
 			$translationProgress[lang].total.add(`${$collection.name}.${getFieldName(field)}`);
 			if (data[lang]) {
 				$translationProgress[lang].translated.add(`${$collection.name}.${getFieldName(field)}`);
