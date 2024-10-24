@@ -136,9 +136,10 @@ It provides a user-friendly interface for searching, filtering, and navigating t
 			console.log(`Fetching media files for folder: ${folderId}`);
 
 			const { data } = await axios.get(`/api/virtualFolder/${folderId}`);
+			console.log(data)
 			if (data.success) {
 				// Correctly assign mediaFiles to files
-				files = Array.isArray(data.contents.mediaFiles) ? data.contents.mediaFiles : [];
+				files = Array.isArray(data.folders) ? data.folders : [];
 				console.log('Fetched media files:', files);
 			} else {
 				throw new Error(data.error || 'Unknown error');
